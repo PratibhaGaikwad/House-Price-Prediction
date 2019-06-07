@@ -105,6 +105,7 @@ esn = ElasticNet(alpha=0.001,l1_ratio = 0.58)
 esn.fit(train_dummies,y_train)
 np.sqrt(-cross_val_score(esn,train_dummies,y_train,cv=5,scoring = 'neg_mean_squared_error')).mean()
 
+from sklearn.ensemble import GradientBoostingRegressor
 gr = GradientBoostingRegressor()
-gr.fit(train_dummies,y)
-np.sqrt(-cross_val_score(gr,train_dummies,y ,cv=5 ,scoring= 'neg_mean_squared_error')).mean()
+gr.fit(train_dummies,y_train)
+np.sqrt(-cross_val_score(gr,train_dummies,y_train ,cv=5 ,scoring= 'neg_mean_squared_error')).mean()
