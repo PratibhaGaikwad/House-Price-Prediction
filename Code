@@ -1,0 +1,110 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression,Lasso,Ridge,ElasticNet
+from xgboost import XGBRegressor
+train = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
+train.head()
+test.head()
+train.columns
+test.loc[666, "GarageYrBlt"] = 1979
+test.loc[1116, "GarageYrBlt"] = 1979
+ 
+test.loc[666, "GarageFinish"] = "Unf"
+test.loc[1116, "GarageFinish"] = "Unf"
+ 
+test.loc[1116, "GarageCars"] = 2
+test.loc[1116, "GarageArea"] = 480
+ 
+test.loc[666, "GarageQual"] = "TA"
+test.loc[1116, "GarageQual"] = "TA"
+ 
+test.loc[666, "GarageCond"] = "TA"
+test.loc[1116, "GarageCond"] = "TA"
+test['SalePrice'] = 0
+test.shape
+all_data = pd.concat([train,test])
+all_data
+testid = test['Id']
+train['SalePrice'] = np.log1p(train['SalePrice'])
+y_train=train['SalePrice']
+train.shape
+
+null_columns = all_data.columns[all_data.isna().any()]
+len(null_columns)
+null_columns = test.columns[test.isna().any()]
+print(len(null_columns))
+(test[null_columns].isna().sum()/(len(test))).sort_values(ascending=False)
+all_data = all_data.drop(['PoolQC', 'MiscFeature', 'Alley', 'Fence', 'Utilities'],axis =1) 
+all_data.shape
+all_data = all_data.fillna({'FireplaceQu':'None'})
+all_data = all_data.fillna({'LotFrontage' : 0})
+all_data = all_data.fillna({'GarageFinish' : 'None'})
+all_data = all_data.fillna({'GarageYrBlt' : 0})
+all_data = all_data.fillna({'GarageQual' :'None' })
+all_data = all_data.fillna({'GarageCond' :'None' })
+all_data = all_data.fillna({'GarageType' :'None' })
+all_data = all_data.fillna({'BsmtQual':"None"})
+all_data = all_data.fillna({'BsmtCond':"None"})
+all_data = all_data.fillna({'BsmtExposure':"None"})
+all_data = all_data.fillna({'BsmtFinType1':"None"})
+all_data = all_data.fillna({"BsmtFinSF1": 0})
+all_data = all_data.fillna({"BsmtFinType2": "None"})
+all_data = all_data.fillna({"BsmtFinSF2": 0})
+all_data = all_data.fillna({"BsmtUnfSF": 0})
+all_data = all_data.fillna({"TotalBsmtSF": 0})
+all_data = all_data.fillna({"BsmtFullBath": 0})
+all_data = all_data.fillna({"BsmtHalfBath": 0})
+ 
+# MasVnr
+all_data = all_data.fillna({"MasVnrType": "None"})
+all_data = all_data.fillna({"MasVnrType": "None"})
+all_data = all_data.fillna({"MasVnrArea": 0})
+all_data = all_data.fillna({"MasVnrArea": 0})
+ 
+# other
+all_data = all_data.fillna({"MSZoning": "RL"})
+all_data = all_data.fillna({"Exterior1st": "VinylSd"})
+all_data = all_data.fillna({"Exterior2nd": "VinylSd"})
+all_data = all_data.fillna({"Electrical": "SBrkr"})
+all_data = all_data.fillna({"KitchenQual": "TA"})
+all_data = all_data.fillna({"Functional": "Typ"})
+all_data = all_data.fillna({"SaleType": "WD"})
+X_train = all_data[0 :1460]
+X_test = all_data[1460:]
+y_train =train.SalePrice
+
+df = X_train.corr()
+df.style.background_gradient()
+
+train_dummies =pd.get_dummies(pd.concat((X_train.drop(['SalePrice','Id'],axis = 1),X_test.drop(['Id'],axis = 1)),axis =0)).iloc[:X_train.shape[0]]
+test_dummies = pd.get_dummies(pd.concat((X_train.drop(['SalePrice','Id'],axis = 1),X_test.drop(['Id'],axis = 1)),axis =0)).iloc[X_train.shape[0]:]
+train_dummies.shape,test_dummies.shape
+
+y_train= train.SalePrice
+train_dummies = train_dummies.drop(['SalePrice'],axis=1)
+test_dummies = test_dummies.drop(['SalePrice'],axis=1)
+
+from sklearn.model_selection import cross_val_score
+rr =Ridge(alpha=0.001)
+rr.fit(train_dummies,y_train)
+np.sqrt(-cross_val_score(rr,train_dummies,y_train,cv =5,scoring = 'neg_mean_squared_error')).mean()
+
+ls = Lasso(alpha=0.001)
+ls.fit(train_dummies,y_train)
+np.sqrt(-cross_val_score(ls,train_dummies,y_train,cv=5,scoring = 'neg_mean_squared_error')).mean()
+
+esn = ElasticNet(alpha=0.001,l1_ratio = 0.58)
+esn.fit(train_dummies,y_train)
+np.sqrt(-cross_val_score(esn,train_dummies,y_train,cv=5,scoring = 'neg_mean_squared_error')).mean()
+
+gr = GradientBoostingRegressor()
+gr.fit(train_dummies,y)
+np.sqrt(-cross_val_score(gr,train_dummies,y ,cv=5 ,scoring= 'neg_mean_squared_error')).mean()
